@@ -1,202 +1,179 @@
-import * as React from 'react';
-import PropTypes from 'prop-types';
-import clsx from 'clsx';
-import { withStyles } from '@mui/styles';
-import { createTheme } from '@mui/material/styles';
-import TableCell from '@mui/material/TableCell';
-import Paper from '@mui/material/Paper';
-import { AutoSizer, Column, Table } from 'react-virtualized';
+import { Paper, Stack, Switch, Avatar, IconButton } from "@mui/material";
+import axios from "axios";
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  useFilters,
+  useTable,
+  setFilter,
+  useSortBy,
+  useGlobalFilter,
+} from "react-table";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import TableContainer from "@mui/material/TableContainer";
 
-const styles = (theme) => ({
-  flexContainer: {
-    display: 'flex',
-    alignItems: 'center',
-    boxSizing: 'border-box',
+import DeleteIcon from "@mui/icons-material/Delete";
+import ModeEditIcon from "@mui/icons-material/ModeEdit";
+
+import { GlobalFilters } from "./GlobalFilters";
+import image from "../../images/woman.jpg";
+
+import { makeStyles } from "@mui/styles";
+
+const label = { inputProps: { "aria-label": "Active" } };
+
+const useStyles = makeStyles((theme) => ({
+  tableContainer: {
+    paddingTop: "5em",
+    paddingBottom: "3em",
+    paddingLeft: "1em",
+    paddingRight: "1em",
   },
   table: {
-   
-    '& .ReactVirtualized__Table__headerRow': {
-      ...(theme.direction === 'rtl' && {
-        paddingLeft: '0 !important',
-      }),
-      ...(theme.direction !== 'rtl' && {
-        paddingRight: undefined,
-      }),
+    minWidth: 600,
+  },
+  tableHead: {},
+  headText: {
+    fontWeight: 500,
+  },
+  search: {
+    marginBottom: "1em",
+  },
+}));
+
+export function DatabaseTable(props) {
+  const classes = useStyles();
+
+  const [users, setUsers] = useState([]);
+  const fetchProducts = async () => {
+    const response = await axios
+      .get("http://fakeapi.jsonparseronline.com/posts")
+      .catch((err) => console.log(err));
+
+    if (response) {
+      const Users = response.data;
+      setUsers(Users);
+      console.log(users);
+    }
+  };
+
+  const UsersData = useMemo(() => [...users], [users]);
+
+  const UsersColumns = useMemo(
+    () =>
+      users[0]
+        ? Object.keys(users[0])
+            .filter((key) => key !== "content" && "title")
+            .map((key) => {
+              if (key === "imageUrl")
+                return {
+                  Header: key,
+                  accessor: key,
+                  Cell: ({ value }) => <img src={value} alt="user" />,
+                  maxWidth: 70,
+                };
+
+              return { Header: key, accessor: key };
+            })
+        : [],
+    [users]
+  );
+
+  const tableHooks = (hooks) => {
+    hooks.visibleColumns.push((columns) => [
+      ...columns,
+      {
+        id: "Action",
+        Header: "Action",
+        Cell: ({ row }) => (
+          <Stack direction="row">
+          <IconButton aria-label="delete" color="primary" >
+            <ModeEditIcon />
+          </IconButton>
+          <IconButton aria-label="delete" color="secondary">
+            <DeleteIcon />
+          </IconButton>
+          </Stack>
+        ),
+      },
+      {
+        id: "Status",
+        Header: "Status",
+        Cell: ({ row }) => <Switch {...label} defaultChecked color="success" />,
+      },
+      {
+        id: "Avatar",
+        Header: "Avatar",
+        Cell: ({ row }) => <Avatar alt="Cindy Baker" src={image}></Avatar>,
+      },
+    ]);
+  };
+
+  const tableInstance = useTable(
+    {
+      columns: UsersColumns,
+      data: UsersData,
     },
-  },
-  tableRow: {
-    cursor: 'pointer',
-  },
-  tableRowHover: {
-    '&:hover': {
-      backgroundColor: theme.palette.grey[200],
-    },
-  },
-  tableCell: {
-    flex: 1,
-  },
-  noClick: {
-    cursor: 'initial',
-  },
-});
+    useFilters,
+    useGlobalFilter,
+    tableHooks,
+    useSortBy
+  );
 
-class MuiVirtualizedTable extends React.PureComponent {
-  static defaultProps = {
-    headerHeight: 48,
-    rowHeight: 48,
-  };
+  const {
+    getTableProps,
+    getTableBodyProps,
+    headerGroups,
+    rows,
+    prepareRow,
+    setFilter,
+  } = tableInstance;
+  useEffect(() => {
+    fetchProducts();
+  }, []);
 
-  getRowClassName = ({ index }) => {
-    const { classes, onRowClick } = this.props;
-
-    return clsx(classes.tableRow, classes.flexContainer, {
-      [classes.tableRowHover]: index !== -1 && onRowClick != null,
-    });
-  };
-
-  cellRenderer = ({ cellData, columnIndex }) => {
-    const { columns, classes, rowHeight, onRowClick } = this.props;
-    return (
-      <TableCell
-        component="div"
-        className={clsx(classes.tableCell, classes.flexContainer, {
-          [classes.noClick]: onRowClick == null,
-        })}
-        variant="body"
-        style={{ height: rowHeight }}
-        align={
-          (columnIndex != null && columns[columnIndex].numeric) || false
-            ? 'right'
-            : 'left'
-        }
-      >
-        {cellData}
-      </TableCell>
-    );
-  };
-
-  headerRenderer = ({ label, columnIndex }) => {
-    const { headerHeight, columns, classes } = this.props;
-
-    return (
-      <TableCell
-        component="div"
-        className={clsx(classes.tableCell, classes.flexContainer, classes.noClick)}
-        variant="head"
-        style={{ height: headerHeight }}
-        align={columns[columnIndex].numeric || false ? 'right' : 'left'}
-      >
-        <span>{label}</span>
-      </TableCell>
-    );
-  };
-
-  render() {
-    const { classes, columns, rowHeight, headerHeight, ...tableProps } = this.props;
-    return (
-      <AutoSizer>
-        {({ height, width }) => (
-          <Table
-            height={height}
-            width={width}
-            rowHeight={rowHeight}
-            gridStyle={{
-              direction: 'inherit',
-            }}
-            headerHeight={headerHeight}
-            className={classes.table}
-            {...tableProps}
-            rowClassName={this.getRowClassName}
-          >
-            {columns.map(({ dataKey, ...other }, index) => {
-              return (
-                <Column
-                  key={dataKey}
-                  headerRenderer={(headerProps) =>
-                    this.headerRenderer({
-                      ...headerProps,
-                      columnIndex: index,
-                    })
-                  }
-                  className={classes.flexContainer}
-                  cellRenderer={this.cellRenderer}
-                  dataKey={dataKey}
-                  {...other}
-                />
-              );
-            })}
-          </Table>
-        )}
-      </AutoSizer>
-    );
-  }
-}
-
-MuiVirtualizedTable.propTypes = {
-  classes: PropTypes.object.isRequired,
-  columns: PropTypes.arrayOf(
-    PropTypes.shape({
-      dataKey: PropTypes.string.isRequired,
-      label: PropTypes.string.isRequired,
-      numeric: PropTypes.bool,
-      width: PropTypes.number.isRequired,
-    }),
-  ).isRequired,
-  headerHeight: PropTypes.number,
-  onRowClick: PropTypes.func,
-  rowHeight: PropTypes.number,
-};
-
-const defaultTheme = createTheme();
-const VirtualizedTable = withStyles(styles, { defaultTheme })(MuiVirtualizedTable);
-
-// ---
-
-const sample = [
-  ["Daniel darlio", 'danieldarlio01@gmail.com', "+256785124779"],
-  ["joseph okello", 'Josephokello@gmail.com', "+256785124779"],
-  ["omoding daniel", 'danielomoding@gmail.com', "+256785124779"],
-  ["isaac ojimum", 'ojimumisaac@gmail.com', "+256785124779"],
-  ["Daniel darlio", 'danieldarlio01@gmail.com', "+256785124779"],
-];
-
-function createData(id, Username, Email, Contact) {
-  return { id, Username, Email, Contact};
-}
-
-const rows = [];
-
-for (let i = 0; i < 200; i += 1) {
-  const randomSelection = sample[Math.floor(Math.random() * sample.length)];
-  rows.push(createData(i, ...randomSelection));
-}
-
-export default function ReactVirtualizedTable() {
   return (
-    <Paper elevation={3} style={{ height: 400, width: '100%', margin:10, borderRadius:"15px"}}>
-      <VirtualizedTable
-        rowCount={rows.length}
-        rowGetter={({ index }) => rows[index]}
-        columns={[
-          {
-            width: 300,
-            label: 'Username',
-            dataKey: 'Username',
-          },
-          {
-            width: 300,
-            label: 'Email',
-            dataKey: 'Email',
-        
-          },
-          {
-            width: 150,
-            label: 'Contact',
-            dataKey: 'Contact',
-            
-          },
-        ]}
-      />
-    </Paper>
+    <TableContainer component={Paper} className={classes.tableContainer}>
+      <div className={classes.search}>
+        <GlobalFilters />
+      </div>
+      <Table sx={{ minWidth: 650 }} {...getTableProps()}>
+        <TableHead>
+          {headerGroups.map((headerGroup) => (
+            <TableRow {...headerGroup.getHeaderGroupProps()}>
+              {headerGroup.headers.map((column) => (
+                <TableCell
+                  scope="row"
+                  align="right"
+                  sx={{ backgroundColor: "#1c84e3" }}
+                  variant="head"
+                  {...column.getHeaderProps()}
+                >
+                  {column.render("Header")}
+                </TableCell>
+              ))}
+            </TableRow>
+          ))}
+        </TableHead>
+        <TableBody {...getTableBodyProps()}>
+          {rows.map((row) => {
+            prepareRow(row);
+
+            return (
+              <TableRow {...row.getRowProps()}>
+                {row.cells.map((cell) => (
+                  <TableCell scope="row" align="right" {...cell.getCellProps()}>
+                    {cell.render("Cell")}
+                  </TableCell>
+                ))}
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </TableContainer>
   );
 }

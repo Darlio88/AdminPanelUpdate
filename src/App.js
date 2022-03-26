@@ -1,13 +1,17 @@
-import { Card, Stack } from "@mui/material";
+import { Card, Grid } from "@mui/material";
 
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import AppBar from "./components/AppBar/AppBar";
 
-import DatabaseTable from "./components/DatabaseTable/DatabaseTable";
+import {DatabaseTable} from "./components/DatabaseTable/DatabaseTable";
 import SideBar from "./components/SideBar/SideBar";
 import Login from "./pages/Login";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
+
+
+
+
 
 const theme = createTheme({
   components: {
@@ -28,8 +32,8 @@ function App() {
   return (
     <BrowserRouter>
       <ThemeProvider theme={theme}>
-        <Card
-          sx={{
+        <div
+          styles={{
             backgroundColor: "#443955",
             borderRadius: "10px",
             height: "100%",
@@ -43,17 +47,18 @@ function App() {
             <Route
               path="admin/"
               element={
-                <Stack
-                  direction={{ xs: "column", sm: "row" }}
-                  spacing={{ xs: 1, sm: 2, md: 4 }}
-                >
-                  <SideBar />
-                  <DatabaseTable />
-                </Stack>
-              }
+<Grid container spacing={{ xs: 1, sm: 2, md: 4 }}>
+
+  <Grid item xs={2} sm={3}>
+  <SideBar />
+  </Grid>
+  <Grid item xs={10} sm={9}>
+  <DatabaseTable />
+  </Grid>
+  </Grid> }
             />
           </Routes>
-        </Card>
+        </div>
       </ThemeProvider>
     </BrowserRouter>
   );

@@ -5,26 +5,62 @@ import {
   Paper,
   TextField,
   Button,
+  Container,
 } from "@mui/material";
 import React, { useState } from "react";
 import axios from "axios";
 import LockIcon from "@mui/icons-material/Lock";
 import { useNavigate } from "react-router-dom";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 
-import { loginRoute } from "../utils/API";
+import { makeStyles } from "@mui/styles";
+const useStyles = makeStyles((theme) => ({
+  container: {
+    marginTop: "5em",
+    paddingTop: "5em",
+    marginBottom: "3em"
+  },
+  login: {
+    display: "flex",
+    flexDirection: "column",
+    maxWidth: "400px",
+    flexGrow: 1,
+    paddingLeft: 7,
+    paddingRight: 7,
+    paddingTop: 4,
+    paddingBottom: "1em",
+
+    margin: "30px auto",
+    rowGap: "1em",
+    borderRadius: 10,
+    backgroundColor: "white",
+    color: "white",
+  },
+  items:{
+    spacing: "auto"
+  },
+  text: {
+    marginTop: "2.5em",
+    marginBottom: "1.5em",
+    marginRight: "1em",
+    marginLeft:"1em"
+  },
+  button: {
+    marginTop: "1.5em",
+    marginBottom: "1.5em",
+    
+    
+  },
+  typo:{
+    marginTop:"1em",
+    marginBottom:"3em"
+  }
+}));
 
 export default function Login() {
-  let navigate = useNavigate()
+  const classes = useStyles();
+  let navigate = useNavigate();
   const [details, setDetails] = useState({ username: "", password: "" });
-  const toastOptions = {
-    position: "bottom-right",
-    autoClose: 8000,
-    pauseOnHover: true,
-    draggable: true,
-    theme: "dark",
-  };
+
   const handleChange = (event) => {
     setDetails({ ...details, [event.target.value]: event.target.value });
   };
@@ -32,19 +68,18 @@ export default function Login() {
     event.preventDefault();
     if (handleValidation()) {
       const { username, password } = details;
-      const { data } = await axios.post(loginRoute, {
+      const { data } = await axios.post("http://localhost:7000", {
         username,
         password,
       });
       if (data.status === false) {
-        toast.error(data.msg, toastOptions);
       }
       if (data.status === true) {
         localStorage.setItem(
           process.env.REACT_APP_LOCALHOST_KEY,
           JSON.stringify(data.user)
         );
-        navigate("/admin")
+        navigate("/admin");
       }
     }
   };
@@ -52,91 +87,69 @@ export default function Login() {
   const handleValidation = () => {
     const { user, pas } = details;
     if (pas === "") {
-      toast.error("password is required", toastOptions);
       return false;
     } else if (user === "") {
-      toast.error("username is required", toastOptions);
       return false;
     }
     return true;
   };
   return (
-    
-      <Paper
-        elevation={3}
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          flexGrow: 1,
-          paddingLeft: 7,
-          paddingRight: 7,
-          paddingTop: 4,
-          paddingBottom: 2,
-          height: '70vh',
-          width: '30vw',
-          margin: "30px auto",
-          rowGap: "5px",
-          borderRadius: 10,
-          backgroundColor:"#1b0e30",
-          color: "white",
-        }}
-      >
-        <Grid align="center" sx={{}}>
-          <Avatar sx={{ backgroundColor: "#443955" }}>
+    <Container className={classes.container}>
+      <Paper elevation={3} className={classes.login}>
+        <Grid align="center" className={classes.items}>
+          <div  className={classes.typo} >
+          <Avatar sx={{marginBottom:"1em"}} >
             {" "}
             <LockIcon fontSize="large" />{" "}
           </Avatar>
           <Typography variant="h4" component="h1" >
             Login as Admin
           </Typography>
+          </div>
         </Grid>
         <Grid align="center">
-        <form
-          onSubmit={handleSubmit}
-          method="post"
-         
-        >
-          <TextField
-            name="username"
-            label="UserName"
-            onChange={(e) => handleChange(e)}
-            required
-            fullWidth
-            placeholder="Enter your username..."
-            sx={{ marginTop: "25px", marginBottom: "15px", "& label":{color:"white"} }}
-          />
-          <TextField
-            name="password"
-            label="Password"
-            onChange={(e) => handleChange(e)}
-            required
-            fullWidth
-            placeholder="Enter your password"
-            type="password"
-            fullWidth
-            placeholder="Enter your password..."
-            sx={{ marginTop: "15px", marginBottom: "15px", "& label":{color:"white"} }}
-          />
-          <Button
-            type="submit"
-            color="primary"
-            fullWidth
-            required
-            variant="contained"
-            sx={{
-              marginTop: "15px",
-              marginBottom: "10px",
-              borderRadius: 4,
-              width: "130px",
-              fontSize: "20px",
-            }}
-          >
-            Sign in
-          </Button>
-        </form>
+          <form onSubmit={handleSubmit} method="post">
+            <div className={classes.text}>
+            <TextField
+              name="username"
+              label="UserName"
+              onChange={(e) => handleChange(e)}
+              required
+              fullWidth
+              placeholder="Enter your username..."
+              sx={{"& label": { color: "grey" },}}
+            />
+            </div>
+            
+            <div className={classes.text}>
+            <TextField
+              name="password"
+              label="Password"
+              onChange={(e) => handleChange(e)}
+              required
+              fullWidth
+              placeholder="Enter your password"
+              type="password"
+              
+            />
+            </div>
+            <div className={classes.button}>
+            <Button
+              type="submit"
+              color="primary"
+              fullWidth
+              required
+              variant="contained"
+             sx={{width: "auto",
+             fontSize: "20px",
+             borderRadius: "15px",}} 
+            >
+              Sign in
+            </Button>
+            </div>
+          </form>
         </Grid>
-       
-        <ToastContainer />
       </Paper>
+    </Container>
   );
 }
